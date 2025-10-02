@@ -64,7 +64,8 @@
         top: 0;
         width: 280px;
         height: 100vh;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0d47a1 0%, #42a5f5 100%);
+;
         color: white;
         transition: left 0.3s ease;
         z-index: 1000;
