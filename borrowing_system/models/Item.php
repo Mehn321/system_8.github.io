@@ -26,7 +26,7 @@ class Item
         $unit = $this->db->escape($data['unit']);
 
         $sql = "INSERT INTO items
-                (item_code, item_name, item_description, category, total_quantity, available_quantity, unit)
+                (item_code, item_name, item_description, category_id, total_quantity, available_quantity, unit)
                 VALUES
                 ('$item_code', '$item_name', '$description', '$category', $total_quantity, $total_quantity, '$unit')";
 
@@ -46,11 +46,11 @@ class Item
         $conditions = [];
 
         if (!empty($search)) {
-            $conditions[] = "(item_code LIKE '%$search%' OR item_name LIKE '%$search%' OR item_description LIKE '%$search%')";
+            $conditions[] = "(i.item_code LIKE '%$search%' OR i.item_name LIKE '%$search%' OR i.item_description LIKE '%$search%')";
         }
 
         if (!empty($category)) {
-            $conditions[] = "category = '$category'";
+            $conditions[] = "c.category_name = '$category'";
         }
 
         if (!empty($conditions)) {
@@ -63,9 +63,10 @@ class Item
             $limit_clause = "LIMIT $offset, $limit";
         }
 
-        $sql = "SELECT * FROM items
+        $sql = "SELECT i.*, c.category_name as category FROM items i
+                LEFT JOIN categories c ON i.category_id = c.category_id
                 $where_clause
-                ORDER BY item_name
+                ORDER BY i.item_name
                 $limit_clause";
 
         $result = $this->db->query($sql);
@@ -111,7 +112,7 @@ class Item
                 item_code = '$item_code',
                 item_name = '$item_name',
                 item_description = '$description',
-                category = '$category',
+                category_id = '$category',
                 total_quantity = $total_quantity,
                 available_quantity = $new_available,
                 unit = '$unit',
@@ -142,12 +143,12 @@ class Item
 
     public function getCategories()
     {
-        $sql = "SELECT DISTINCT category FROM items ORDER BY category";
+        $sql = "SELECT DISTINCT c.category_name FROM items i LEFT JOIN categories c ON i.category_id = c.category_id ORDER BY c.category_name";
         $result = $this->db->query($sql);
 
         $categories = [];
         while ($row = mysqli_fetch_assoc($result)) {
-            $categories[] = $row['category'];
+            $categories[] = $row['category_name'];
         }
 
         return $categories;
@@ -184,8 +185,9 @@ class Item
 
     public function getMostBorrowed($limit = 10)
     {
-        $sql = "SELECT i.*, COUNT(bi.item_id) as borrow_count
+        $sql = "SELECT i.*, c.category_name as category, COUNT(bi.item_id) as borrow_count
                 FROM items i
+                LEFT JOIN categories c ON i.category_id = c.category_id
                 LEFT JOIN borrowed_items bi ON i.item_id = bi.item_id
                 GROUP BY i.item_id
                 ORDER BY borrow_count DESC

@@ -56,6 +56,11 @@ class Transaction
         $where_clause = '';
         $conditions = [];
 
+        // Exclude returned transactions by default unless specifically requested
+        if (!isset($filters['include_returned']) || $filters['include_returned'] !== true) {
+            $conditions[] = "bt.status != 'returned'";
+        }
+
         if (!empty($filters['search'])) {
             $search = $this->db->escape($filters['search']);
             $conditions[] = "(bt.activity_purpose LIKE '%$search%' OR b.full_name LIKE '%$search%' OR b.id_number LIKE '%$search%')";
@@ -187,6 +192,10 @@ class Transaction
     {
         $transaction_id = $this->db->escape($transaction_id);
         $admin_id = $this->db->escape($admin_id);
+
+        if (!is_array($quantities_returned)) {
+            return false;
+        }
 
         // Update returned quantities
         foreach ($quantities_returned as $borrowed_item_id => $quantity) {

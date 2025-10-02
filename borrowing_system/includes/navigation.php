@@ -1,230 +1,103 @@
-<!-- Navigation Menu -->
-<div class="navigation-menu">
-    <div class="nav-header">
-        <h2><?php echo $system_name ?? 'Borrowing System'; ?></h2>
-        <div class="nav-toggle" onclick="toggleNav()">
-            <span></span>
-            <span></span>
-            <span></span>
+<!-- App Layout -->
+<div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h1 class="sidebar-title"><?php echo $system_name ?? 'Borrowing System'; ?></h1>
+            <p class="sidebar-subtitle">Inventory Management</p>
         </div>
-    </div>
 
-    <div class="nav-body">
-        <div class="nav-section">
-            <div class="nav-section-title">Main</div>
+        <nav class="nav-section">
+            <h3 class="nav-section-title">Main</h3>
             <ul class="nav-list">
-                <li><a href="dashboard.php"
+                <li class="nav-item">
+                    <a href="dashboard.php"
                         class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'dashboard.php' ? 'active' : ''; ?>">
-                        <span class="nav-icon">📊</span> Dashboard</a></li>
-                <li><a href="transactions.php"
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="transactions.php"
                         class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'transactions.php' ? 'active' : ''; ?>">
-                        <span class="nav-icon">🔄</span> Transactions</a></li>
+                        <i class="fas fa-exchange-alt"></i>
+                        Transactions
+                    </a>
+                </li>
             </ul>
-        </div>
+        </nav>
 
-        <div class="nav-section">
-            <div class="nav-section-title">Management</div>
+        <nav class="nav-section">
+            <h3 class="nav-section-title">Management</h3>
             <ul class="nav-list">
-                <li><a href="borrowers.php"
+                <li class="nav-item">
+                    <a href="borrowers.php"
                         class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'borrowers.php' ? 'active' : ''; ?>">
-                        <span class="nav-icon">👥</span> Borrowers</a></li>
-                <li><a href="items.php"
+                        <i class="fas fa-users"></i>
+                        Borrowers
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="items.php"
                         class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'items.php' ? 'active' : ''; ?>">
-                        <span class="nav-icon">📦</span> Inventory</a></li>
-            </ul>
-        </div>
+                        <i class="fas fa-boxes"></i>
+                        Inventory
+                    </a>
+                </li>
 
-        <div class="nav-section">
-            <div class="nav-section-title">Reports</div>
+            </ul>
+        </nav>
+
+        <nav class="nav-section">
+            <h3 class="nav-section-title">Reports</h3>
             <ul class="nav-list">
-                <li><a href="reports.php"
+                <li class="nav-item">
+                    <a href="reports.php"
                         class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'reports.php' ? 'active' : ''; ?>">
-                        <span class="nav-icon">📈</span> Reports</a></li>
-                <li><a href="settings.php"
+                        <i class="fas fa-chart-bar"></i>
+                        Reports
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="settings.php"
                         class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'active' : ''; ?>">
-                        <span class="nav-icon">⚙️</span> Settings</a></li>
+                        <i class="fas fa-cog"></i>
+                        Settings
+                    </a>
+                </li>
             </ul>
-        </div>
+        </nav>
 
-        <div class="nav-section">
-            <div class="nav-section-title">Account</div>
-            <ul class="nav-list">
-                <li><a href="dashboard.php?logout=1" class="nav-link"
-                        onclick="return confirm('Are you sure you want to logout?')">
-                        <span class="nav-icon">🚪</span> Logout</a></li>
-            </ul>
-        </div>
-    </div>
-</div>
 
-<!-- Navigation Toggle Button -->
-<button class="nav-toggle-btn" onclick="toggleNav()">☰</button>
+    </aside>
 
-<!-- Navigation Overlay -->
-<div class="nav-overlay" onclick="toggleNav()"></div>
+    <!-- Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-<style>
-    .navigation-menu {
-        position: fixed;
-        left: -280px;
-        top: 0;
-        width: 280px;
-        height: 100vh;
-    background: linear-gradient(135deg, #0d47a1 0%, #42a5f5 100%);
-;
-        color: white;
-        transition: left 0.3s ease;
-        z-index: 1000;
-        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-    }
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <!-- Top Header -->
+        <header class="top-header">
+            <button class="nav-toggle" onclick="toggleNav()">
+                <i class="fas fa-bars"></i>
+            </button>
 
-    .navigation-menu.open {
-        left: 0;
-    }
+            <h1 class="header-title">
+                <?php
+                $page = basename($_SERVER['PHP_SELF'], '.php');
+                echo ucfirst($page);
+                ?>
+            </h1>
 
-    .nav-header {
-        padding: 20px;
-        background: rgba(255, 255, 255, 0.1);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .nav-header h2 {
-        margin: 0;
-        font-size: 18px;
-        font-weight: 600;
-    }
-
-    .nav-toggle {
-        display: flex;
-        flex-direction: column;
-        cursor: pointer;
-        padding: 5px;
-    }
-
-    .nav-toggle span {
-        width: 20px;
-        height: 2px;
-        background: white;
-        margin: 2px 0;
-        transition: 0.3s;
-    }
-
-    .nav-body {
-        padding: 20px 0;
-    }
-
-    .nav-section {
-        margin-bottom: 30px;
-    }
-
-    .nav-section-title {
-        padding: 0 20px;
-        font-size: 12px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        opacity: 0.7;
-        margin-bottom: 10px;
-    }
-
-    .nav-list {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-    }
-
-    .nav-list li {
-        margin: 0;
-    }
-
-    .nav-link {
-        display: flex;
-        align-items: center;
-        padding: 12px 20px;
-        color: white;
-        text-decoration: none;
-        transition: background 0.3s ease;
-        border-left: 3px solid transparent;
-    }
-
-    .nav-link:hover {
-        background: rgba(255, 255, 255, 0.1);
-        border-left-color: rgba(255, 255, 255, 0.3);
-    }
-
-    .nav-link.active {
-        background: rgba(255, 255, 255, 0.2);
-        border-left-color: white;
-    }
-
-    .nav-icon {
-        margin-right: 10px;
-        font-size: 16px;
-    }
-
-    .nav-toggle-btn {
-        position: fixed;
-        top: 20px;
-        left: 20px;
-        z-index: 1001;
-        background: #667eea;
-        color: white;
-        border: none;
-        padding: 10px;
-        border-radius: 5px;
-        cursor: pointer;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-        font-size: 16px;
-    }
-
-    .nav-toggle-btn:hover {
-        background: #5a6fd8;
-    }
-
-    .nav-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 999;
-        display: none;
-    }
-
-    .nav-overlay.active {
-        display: block;
-    }
-
-    @media (max-width: 768px) {
-        .navigation-menu {
-            width: 100%;
-            left: -100%;
-        }
-
-        .navigation-menu.open {
-            left: 0;
-        }
-    }
-</style>
-
-<script>
-    function toggleNav() {
-        const nav = document.querySelector('.navigation-menu');
-        const overlay = document.querySelector('.nav-overlay');
-        const toggleBtn = document.querySelector('.nav-toggle-btn');
-
-        nav.classList.toggle('open');
-        overlay.classList.toggle('active');
-
-        if (nav.classList.contains('open')) {
-            toggleBtn.innerHTML = '✕';
-            toggleBtn.style.left = '300px';
-        } else {
-            toggleBtn.innerHTML = '☰';
-            toggleBtn.style.left = '20px';
-        }
-    }
-</script>
+            <div class="user-menu">
+                <span class="user-greeting">
+                    <i class="fas fa-user"></i>
+                    Welcome, <?php echo $_SESSION['admin_name'] ?? 'Admin'; ?>
+                </span>
+                <a href="dashboard.php?logout=1" class="btn btn-danger btn-sm"
+                    onclick="return confirm('Are you sure you want to logout?')">
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+                </a>
+            </div>
+        </header>

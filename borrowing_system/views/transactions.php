@@ -74,7 +74,7 @@ if (isset($_POST['issue_items'])) {
 if (isset($_POST['return_items'])) {
     $transaction_id = $_POST['transaction_id'];
 
-    if ($transaction->returnItems($transaction_id, $_POST['quantities_returned'], $_SESSION['admin_id'])) {
+    if ($transaction->returnItems($transaction_id, $_POST['quantities_returned'] ?? [], $_SESSION['admin_id'])) {
         $message = 'Items returned successfully!';
         $message_type = 'success';
     } else {
@@ -86,7 +86,13 @@ if (isset($_POST['return_items'])) {
 // Get all transactions
 $filters = [];
 if (isset($_GET['search'])) $filters['search'] = $_GET['search'];
-if (isset($_GET['status'])) $filters['status'] = $_GET['status'];
+if (isset($_GET['status'])) {
+    $filters['status'] = $_GET['status'];
+    // Include returned transactions if specifically requested
+    if ($_GET['status'] == 'returned') {
+        $filters['include_returned'] = true;
+    }
+}
 if (isset($_GET['department'])) $filters['department'] = $_GET['department'];
 if (isset($_GET['date_from']) && isset($_GET['date_to'])) {
     $filters['date_from'] = $_GET['date_from'];
@@ -97,6 +103,7 @@ $transactions_list = $transaction->getAll($filters);
 $borrowers_list = $borrower->getAll();
 $items_list = $item->getAll();
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -109,21 +116,14 @@ $items_list = $item->getAll();
 </head>
 
 <body>
+    <?php include '../includes/navigation.php'; ?>
+
     <div class="dashboard-container">
-        <!-- Header -->
-        <div class="header">
-            <h1>Transaction Management</h1>
-            <div class="user-info">
-                <span>Welcome, <?php echo $_SESSION['admin_name']; ?></span>
-                <a href="dashboard.php" class="btn btn-secondary">Back to Dashboard</a>
-                <a href="dashboard.php?logout=1" class="logout-btn">Logout</a>
-            </div>
-        </div>
 
         <?php if ($message): ?>
-            <div class="alert alert-<?php echo $message_type == 'success' ? 'success' : 'error'; ?>">
-                <?php echo $message; ?>
-            </div>
+        <div class="alert alert-<?php echo $message_type == 'success' ? 'success' : 'error'; ?>">
+            <?php echo $message; ?>
+        </div>
         <?php endif; ?>
 
         <!-- Quick Actions -->
@@ -145,9 +145,9 @@ $items_list = $item->getAll();
                         <select id="borrower_id" name="borrower_id" required>
                             <option value="">Select Borrower</option>
                             <?php foreach ($borrowers_list as $borrower_data): ?>
-                                <option value="<?php echo $borrower_data['borrower_id']; ?>">
-                                    <?php echo $borrower_data['full_name'] . ' (' . $borrower_data['id_number'] . ')'; ?>
-                                </option>
+                            <option value="<?php echo $borrower_data['borrower_id']; ?>">
+                                <?php echo $borrower_data['full_name'] . ' (' . $borrower_data['id_number'] . ')'; ?>
+                            </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -187,11 +187,11 @@ $items_list = $item->getAll();
                         <select id="item_select" onchange="addItemToList()">
                             <option value="">Select Item</option>
                             <?php foreach ($items_list as $item_data): ?>
-                                <option value="<?php echo $item_data['item_id']; ?>"
-                                    data-name="<?php echo $item_data['item_name']; ?>"
-                                    data-available="<?php echo $item_data['available_quantity']; ?>">
-                                    <?php echo $item_data['item_name'] . ' (' . $item_data['available_quantity'] . ' available)'; ?>
-                                </option>
+                            <option value="<?php echo $item_data['item_id']; ?>"
+                                data-name="<?php echo $item_data['item_name']; ?>"
+                                data-available="<?php echo $item_data['available_quantity']; ?>">
+                                <?php echo $item_data['item_name'] . ' (' . $item_data['available_quantity'] . ' available)'; ?>
+                            </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -258,53 +258,66 @@ $items_list = $item->getAll();
                         <th>Date Needed</th>
                         <th>Return Date</th>
                         <th>Status</th>
+                        <th>Items Borrowed</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($transactions_list as $trans): ?>
-                        <tr>
-                            <td><?php echo $trans['transaction_id']; ?></td>
-                            <td>
-                                <strong><?php echo $trans['full_name']; ?></strong><br>
-                                <small><?php echo $trans['id_number']; ?></small>
-                            </td>
-                            <td><?php echo $trans['activity_purpose']; ?></td>
-                            <td><?php echo date('M d, Y', strtotime($trans['date_needed'])); ?></td>
-                            <td><?php echo date('M d, Y', strtotime($trans['date_of_return'])); ?></td>
-                            <td>
-                                <span class="status-badge status-<?php echo $trans['status']; ?>">
-                                    <?php echo ucfirst($trans['status']); ?>
-                                </span>
-                            </td>
-                            <td>
-                                <a href="transaction_details.php?id=<?php echo $trans['transaction_id']; ?>"
-                                    class="btn btn-sm btn-primary">View</a>
+                    <tr>
+                        <td><?php echo $trans['transaction_id']; ?></td>
+                        <td>
+                            <strong><?php echo $trans['full_name']; ?></strong><br>
+                            <small><?php echo $trans['id_number']; ?></small>
+                        </td>
+                        <td><?php echo $trans['activity_purpose']; ?></td>
+                        <td><?php echo date('M d, Y', strtotime($trans['date_needed'])); ?></td>
+                        <td><?php echo date('M d, Y', strtotime($trans['date_of_return'])); ?></td>
+                        <td>
+                            <span class="status-badge status-<?php echo $trans['status']; ?>">
+                                <?php echo ucfirst($trans['status']); ?>
+                            </span>
+                        </td>
+                        <td>
+                            <?php
+                                $items = $transaction->getItems($trans['transaction_id']);
+                                if (!empty($items)) {
+                                    foreach ($items as $item) {
+                                        echo htmlspecialchars($item['item_name']) . ' (' . intval($item['quantity_issued']) . ')<br>';
+                                    }
+                                } else {
+                                    echo 'No items borrowed';
+                                }
+                                ?>
+                        </td>
+                        <td>
+                            <a href="transaction_details.php?id=<?php echo $trans['transaction_id']; ?>"
+                                class="btn btn-sm btn-primary">View</a>
 
-                                <?php if ($trans['status'] == 'pending'): ?>
-                                    <form method="POST" action="" style="display: inline;">
-                                        <input type="hidden" name="transaction_id"
-                                            value="<?php echo $trans['transaction_id']; ?>">
-                                        <button type="submit" name="approve_transaction"
-                                            class="btn btn-sm btn-success">Approve</button>
-                                    </form>
-                                <?php endif; ?>
+                            <?php if ($trans['status'] == 'pending'): ?>
+                            <form method="POST" action="" style="display: inline;">
+                                <input type="hidden" name="transaction_id"
+                                    value="<?php echo $trans['transaction_id']; ?>">
+                                <button type="submit" name="approve_transaction"
+                                    class="btn btn-sm btn-success">Approve</button>
+                            </form>
+                            <?php endif; ?>
 
-                                <?php if ($trans['status'] == 'approved'): ?>
-                                    <form method="POST" action="" style="display: inline;">
-                                        <input type="hidden" name="transaction_id"
-                                            value="<?php echo $trans['transaction_id']; ?>">
-                                        <button type="submit" name="issue_items" class="btn btn-sm btn-warning">Issue
-                                            Items</button>
-                                    </form>
-                                <?php endif; ?>
+                            <?php if ($trans['status'] == 'approved'): ?>
+                            <form method="POST" action="" style="display: inline;">
+                                <input type="hidden" name="transaction_id"
+                                    value="<?php echo $trans['transaction_id']; ?>">
+                                <button type="submit" name="issue_items" class="btn btn-sm btn-warning">Issue
+                                    Items</button>
+                            </form>
+                            <?php endif; ?>
 
-                                <?php if ($trans['status'] == 'issued'): ?>
-                                    <button type="button" class="btn btn-sm btn-info"
-                                        onclick="showReturnForm(<?php echo $trans['transaction_id']; ?>)">Return Items</button>
-                                <?php endif; ?>
-                            </td>
-                        </tr>
+                            <?php if ($trans['status'] == 'issued'): ?>
+                            <button type="button" class="btn btn-sm btn-info"
+                                onclick="showReturnForm(<?php echo $trans['transaction_id']; ?>)">Return Items</button>
+                            <?php endif; ?>
+                        </td>
+                    </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
@@ -329,39 +342,39 @@ $items_list = $item->getAll();
     </div>
 
     <script>
-        function showCreateForm() {
-            document.getElementById('createForm').style.display = 'block';
-            document.getElementById('filterForm').style.display = 'none';
-        }
+    function showCreateForm() {
+        document.getElementById('createForm').style.display = 'block';
+        document.getElementById('filterForm').style.display = 'none';
+    }
 
-        function hideCreateForm() {
-            document.getElementById('createForm').style.display = 'none';
-        }
+    function hideCreateForm() {
+        document.getElementById('createForm').style.display = 'none';
+    }
 
-        function showFilterForm() {
-            document.getElementById('filterForm').style.display = 'block';
-            document.getElementById('createForm').style.display = 'none';
-        }
+    function showFilterForm() {
+        document.getElementById('filterForm').style.display = 'block';
+        document.getElementById('createForm').style.display = 'none';
+    }
 
-        function hideFilterForm() {
-            document.getElementById('filterForm').style.display = 'none';
-            // Clear filters
-            window.location.href = 'transactions.php';
-        }
+    function hideFilterForm() {
+        document.getElementById('filterForm').style.display = 'none';
+        // Clear filters
+        window.location.href = 'transactions.php';
+    }
 
-        function addItemToList() {
-            const select = document.getElementById('item_select');
-            const selectedOption = select.options[select.selectedIndex];
+    function addItemToList() {
+        const select = document.getElementById('item_select');
+        const selectedOption = select.options[select.selectedIndex];
 
-            if (selectedOption.value) {
-                const itemId = selectedOption.value;
-                const itemName = selectedOption.getAttribute('data-name');
-                const available = selectedOption.getAttribute('data-available');
+        if (selectedOption.value) {
+            const itemId = selectedOption.value;
+            const itemName = selectedOption.getAttribute('data-name');
+            const available = selectedOption.getAttribute('data-available');
 
-                const container = document.getElementById('selectedItems');
+            const container = document.getElementById('selectedItems');
 
-                const itemDiv = document.createElement('div');
-                itemDiv.innerHTML = `
+            const itemDiv = document.createElement('div');
+            itemDiv.innerHTML = `
                     <div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
                         <strong>${itemName}</strong> (Available: ${available})<br>
                         <label>Quantity to borrow:
@@ -371,34 +384,23 @@ $items_list = $item->getAll();
                     </div>
                 `;
 
-                container.appendChild(itemDiv);
-                select.selectedIndex = 0;
-            }
+            container.appendChild(itemDiv);
+            select.selectedIndex = 0;
         }
+    }
 
-        function removeItem(button) {
-            button.parentElement.remove();
-        }
+    function removeItem(button) {
+        button.parentElement.remove();
+    }
 
-        function showReturnForm(transactionId) {
-            document.getElementById('returnModal').style.display = 'block';
-            document.getElementById('returnTransactionId').value = transactionId;
 
-            // This would typically load the transaction items via AJAX
-            // For now, we'll show a placeholder
-            const itemsList = document.getElementById('returnItemsList');
-            itemsList.innerHTML = '<p>Loading transaction items...</p>';
-        }
 
-        function hideReturnForm() {
-            document.getElementById('returnModal').style.display = 'none';
-        }
-
-        // Auto-submit items data before form submission
-        document.querySelector('#createForm form').addEventListener('submit', function() {
-            // Items data is already in the form as hidden inputs
-        });
+    // Auto-submit items data before form submission
+    document.querySelector('#createForm form').addEventListener('submit', function() {
+        // Items data is already in the form as hidden inputs
+    });
     </script>
+    <script src="../assets/js/script.js"></script>
 </body>
 
 </html>
