@@ -198,8 +198,9 @@ document.addEventListener('DOMContentLoaded', function() {
     statCards.forEach(card => {
         card.addEventListener('click', function() {
             const type = card.getAttribute('data-type');
-            if (type === 'transaction_history') {
-                window.location.href = 'transaction_history.php';
+            if (type === 'transaction_history' || type === 'total_transactions') {
+                const url = type === 'transaction_history' ? 'transaction_history.php' : 'transactions.php';
+                window.location.href = url;
             } else {
                 const details = getStatDetails(type);
                 showStatModal(details.title, details.content);

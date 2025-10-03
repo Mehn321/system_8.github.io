@@ -55,9 +55,8 @@ if (isset($_GET['logout'])) {
                     <h3 class="stat-title">Total Transactions</h3>
                     <div class="stat-icon"><i class="fas fa-list"></i></div>
                 </div>
-                <div class="stat-number"><a href="transactions.php?status=returned"
-                        style="color: inherit; text-decoration: none;"><?php echo $transaction->getCount(); ?></a></div>
-                <div class="stat-label">All transactions (click to view returned)</div>
+                <div class="stat-number"><?php echo $transaction->getCount(); ?></div>
+                <div class="stat-label">All transactions (click to view)</div>
             </div>
 
             <div class="stat-card clickable" data-type="today_borrowed">

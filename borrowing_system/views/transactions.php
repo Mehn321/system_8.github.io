@@ -34,13 +34,20 @@ if (isset($_POST['create_transaction'])) {
         if (isset($_POST['items']) && is_array($_POST['items'])) {
             foreach ($_POST['items'] as $item_id => $quantity) {
                 if ($quantity > 0) {
-                    $transaction->addItem($transaction_id, $item_id, $quantity);
+                    $result = $transaction->addItem($transaction_id, $item_id, $quantity);
+                    if (!$result) {
+                        $message = "Error adding item ID $item_id to transaction.";
+                        $message_type = 'error';
+                        break;
+                    }
                 }
             }
         }
 
-        $message = 'Transaction created successfully!';
-        $message_type = 'success';
+        if (empty($message)) {
+            $message = 'Transaction created successfully!';
+            $message_type = 'success';
+        }
     } else {
         $message = 'Error creating transaction.';
         $message_type = 'error';
@@ -201,7 +208,6 @@ $items_list = $item->getAll();
                     <!-- Selected items will be added here -->
                 </div>
 
-                <input type="hidden" name="items" id="itemsData" value="">
                 <button type="submit" name="create_transaction" class="btn btn-primary">Create Transaction</button>
                 <button type="button" class="btn btn-secondary" onclick="hideCreateForm()">Cancel</button>
             </form>
@@ -255,6 +261,7 @@ $items_list = $item->getAll();
                         <th>Transaction ID</th>
                         <th>Borrower</th>
                         <th>Activity</th>
+                        <th>Place of Activity</th>
                         <th>Date Needed</th>
                         <th>Return Date</th>
                         <th>Status</th>
@@ -271,6 +278,7 @@ $items_list = $item->getAll();
                             <small><?php echo $trans['id_number']; ?></small>
                         </td>
                         <td><?php echo $trans['activity_purpose']; ?></td>
+                        <td><?php echo $trans['place_of_activity']; ?></td>
                         <td><?php echo date('M d, Y', strtotime($trans['date_needed'])); ?></td>
                         <td><?php echo date('M d, Y', strtotime($trans['date_of_return'])); ?></td>
                         <td>
@@ -283,7 +291,8 @@ $items_list = $item->getAll();
                                 $items = $transaction->getItems($trans['transaction_id']);
                                 if (!empty($items)) {
                                     foreach ($items as $item) {
-                                        echo htmlspecialchars($item['item_name']) . ' (' . intval($item['quantity_issued']) . ')<br>';
+                                        $quantity = ($trans['status'] == 'pending' || $trans['status'] == 'approved') ? $item['quantity_required'] : $item['quantity_issued'];
+                                        echo htmlspecialchars($item['item_name']) . ' (' . intval($quantity) . ')<br>';
                                     }
                                 } else {
                                     echo 'No items borrowed';
@@ -291,9 +300,6 @@ $items_list = $item->getAll();
                                 ?>
                         </td>
                         <td>
-                            <a href="transaction_details.php?id=<?php echo $trans['transaction_id']; ?>"
-                                class="btn btn-sm btn-primary">View</a>
-
                             <?php if ($trans['status'] == 'pending'): ?>
                             <form method="POST" action="" style="display: inline;">
                                 <input type="hidden" name="transaction_id"
@@ -373,6 +379,16 @@ $items_list = $item->getAll();
 
             const container = document.getElementById('selectedItems');
 
+            // Check if item already added
+            const existingInputs = container.querySelectorAll('input[name^="items"]');
+            for (let input of existingInputs) {
+                if (input.name === `items[${itemId}]`) {
+                    alert('This item is already added.');
+                    select.selectedIndex = 0;
+                    return;
+                }
+            }
+
             const itemDiv = document.createElement('div');
             itemDiv.innerHTML = `
                     <div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
@@ -392,13 +408,6 @@ $items_list = $item->getAll();
     function removeItem(button) {
         button.parentElement.remove();
     }
-
-
-
-    // Auto-submit items data before form submission
-    document.querySelector('#createForm form').addEventListener('submit', function() {
-        // Items data is already in the form as hidden inputs
-    });
     </script>
     <script src="../assets/js/script.js"></script>
 </body>

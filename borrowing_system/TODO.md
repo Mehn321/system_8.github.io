@@ -1,6 +1,5 @@
-# TODO: Fix PHP Warnings in Borrowing System
+# TODO: Modify Total Transactions Stat Card Navigation
 
-- [x] Add isset check for $\_POST['quantities_returned'] in transactions.php
-- [x] Modify returnItems method in Transaction.php to check if $quantities_returned is array
-- [x] Create PHP endpoint api/get_transaction_items.php to return JSON of transaction items
-- [x] Add AJAX call in showReturnForm in script.js to load transaction items and create input fields
+- [x] Update script.js click handler to redirect 'total_transactions' to 'transactions.php'
+- [x] Update dashboard.php to remove link from stat-number for Total Transactions
+- [x] Update stat-label in dashboard.php for Total Transactions to reflect direct navigation
